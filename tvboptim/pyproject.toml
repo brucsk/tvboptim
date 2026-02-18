@@ -1,0 +1,122 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tvboptim"
+version = "0.2.4"
+description = "Optimization tools for The Virtual Brain"
+readme = "README.md"
+authors = [
+    {name = "Marius Pille", email = "marius.pille@bih-charite.de"},
+]
+license = "EUPL-1.2"
+license-files = ["LICENSE"]
+keywords = ["tvb", "optimization", "neuroscience", "brain", "virtual-brain", "jax", "neural-simulation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "optax",
+    "optimistix",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "jax<0.8",
+    "equinox",
+    "dill",
+    "tqdm",
+    "numpyro>=0.19.0",
+    "diffrax",
+    "plum-dispatch",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/virtual-twin/tvboptim"
+"Bug Tracker" = "https://github.com/virtual-twin/tvboptim/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.package-data]
+tvboptim = [
+    "data/connectivity/*/data.npz",
+    "data/functional/*/data.npz",
+    "data/plotting/*/*.nii.gz",
+    "data/plotting/*/*.csv",
+    "data/plotting/*/*.txt",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+pythonpath = ["src"]
+
+# uv-specific dependency groups for local development
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.8.0",
+    "quartodoc>=0.6.0",
+    "jupyter>=1.0.0",
+    "ipykernel",
+]
+docs = [
+    "tvbo",
+    # "tvb-library",
+    "tvb-library @ git+https://github.com/the-virtual-brain/tvb-root.git@master#subdirectory=tvb_library",
+    "jupyter-cache>=1.0.1",
+    "nibabel",
+    "nilearn",
+    "griffe<2.0.0"
+]
+
+# Standard PEP 621 optional dependencies (used by PyPI)
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.8.0",
+    "quartodoc>=0.6.0",
+    "jupyter>=1.0.0",
+    "ipykernel",
+]
+docs = [
+    "tvbo",
+    # "tvb-library",
+    "tvb-library @ git+https://github.com/the-virtual-brain/tvb-root.git@master#subdirectory=tvb_library",
+    "jupyter-cache>=1.0.1",
+    "nibabel",
+    "nilearn",
+    "griffe<2.0.0"
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.format]
+# Use Black-compatible formatting
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint]
+# Enable pycodestyle (E), Pyflakes (F), and isort (I) rules
+select = ["E", "F", "I"]
+# Ignore line too long (E501) since formatter handles it
+# F811: Ignore redefinition warnings (used by plum-dispatch for multiple dispatch)
+# E741: Allow ambiguous variable names like 'I' (standard in neuroscience)
+ignore = ["E501", "F811", "E741"]
+
+[tool.ruff.lint.per-file-ignores]
+# Allow imports after jax.config.update in tests
+"tests/**/*.py" = ["E402"]
