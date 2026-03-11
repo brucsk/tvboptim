@@ -77,8 +77,8 @@ fc_target = fc0_test
 
 ## Load SC matrix and tract lenghts
 # Weights
-weights = sio.loadmat('SC_EnigmadK68.mat')['matrix']
-weights = weights / np.max(weights.values)
+SCR = sio.loadmat('SC_EnigmadK68.mat')['matrix']
+weights = SCR / SCR/np.max(SCR)
 n_nodes = weights.shape[0]
 
 # Delays
