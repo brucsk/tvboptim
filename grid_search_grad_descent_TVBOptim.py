@@ -491,9 +491,10 @@ def tqdm_joblib(tqdm_object):
 
 # Parameter grid
 param_grid = {
-    "l_r": jnp.linspace(1e-3, 1e-1, 5),
-    "steps_grid": jnp.linspace(20, 100, 5, dtype=jnp.int32),
+    "l_r": jnp.linspace(1e-2, 1e-1, 5),
+    "steps_grid": jnp.linspace(60, 100, 5, dtype=jnp.int32),
 }
+
 trials = [
     (float(lr), int(steps))
     for lr, steps in product(np.array(param_grid["l_r"]), np.array(param_grid["steps_grid"]))
@@ -506,11 +507,13 @@ def evaluate_trial(lr, steps):
         opt_state.coupling.coupling.wLRE,
         opt_state.coupling.coupling.wFFI
     )
+    corr_val = fc_corr(fc_opt, fc_target)
+    loss_val = rmse(fc_opt, fc_target)
     return {
         "l_r": lr,
         "steps": steps,
-        "corr": float(fc_corr(fc_opt, fc_target)),
-        "loss": float(rmse(fc_opt, fc_target)),
+        "corr": float(jnp.nan_to_num(corr_val, nan=-jnp.inf)),
+        "loss": float(jnp.nan_to_num(loss_val, nan=jnp.inf)),
     }
 
 n_cpus = 1 if os.name == "nt" else min(4, os.cpu_count() or 1)
