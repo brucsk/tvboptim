@@ -500,7 +500,7 @@ trials = [
     for lr, steps in product(np.array(param_grid["l_r"]), np.array(param_grid["steps_grid"]))
 ]
 
-def evaluate_trial(lr, steps):
+def evaluate_trial(lr, steps, verbose=False):
     opt_state, _ = run_gradient_optimization(learning_rate=lr, max_steps=steps)
     fc_opt = eval_fc(
         opt_state.dynamics.J_i,
@@ -509,6 +509,8 @@ def evaluate_trial(lr, steps):
     )
     corr_val = fc_corr(fc_opt, fc_target)
     loss_val = rmse(fc_opt, fc_target)
+    if verbose:
+        print(f"Trial (lr={lr:.4f}, steps={steps}): corr={corr_val:.4f}, loss={loss_val:.4f}")
     return {
         "l_r": lr,
         "steps": steps,
