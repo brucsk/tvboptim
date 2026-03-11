@@ -520,8 +520,9 @@ def evaluate_trial(lr, steps, verbose=False):
 
 # Cluster memory management: limit concurrent workers to avoid OOM
 # Each worker allocates large JAX buffers, so we use fewer parallel jobs than available CPUs
-available_cpus = 1 if os.name == "nt" else os.cpu_count() or 1
-n_jobs_parallel = max(1, min(4, available_cpus // 4))  # 1/4 of available CPUs, min 1, max 4
+available_cpus = 1 if os.name == "nt" else os.cpu_count() 
+parallelism_divisor = 4  # Use 1/4 of available CPUs for parallel jobs to reduce memory contention
+n_jobs_parallel = max(1, available_cpus // parallelism_divisor)  # 1/4 of available CPUs, min 1, max 4
 
 print(f"Grid search config: available_cpus={available_cpus}, n_jobs_parallel={n_jobs_parallel}")
 
