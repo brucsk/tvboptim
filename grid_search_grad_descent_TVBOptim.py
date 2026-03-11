@@ -7,7 +7,7 @@ import time
 
 cpu = True
 if cpu:
-    N = 8
+    N = 32
     os.environ['XLA_FLAGS'] = f'--xla_force_host_platform_device_count={N}'
 
 # Import all required libraries
@@ -78,7 +78,7 @@ fc_target = fc0_test
 ## Load SC matrix and tract lenghts
 # Weights
 SCR = sio.loadmat('SC_EnigmadK68.mat')['matrix']
-weights = SCR / SCR/np.max(SCR)
+weights = SCR / np.max(SCR)
 n_nodes = weights.shape[0]
 
 # Delays
@@ -290,6 +290,18 @@ model_short, state_short = prepare(network, solver, t1=bold_TR, dt=dt)
 
 print(f"Initial simulation complete. Final S_e mean: {result_init.data[-1, 0, :].mean():.3f}")
 print(f"Initial simulation complete. Final S_i mean: {result_init.data[-1, 1, :].mean():.3f}")
+
+## Create BOLD monitor for evaluation ================================
+# Create BOLD monitor - we'll monitor S_e (first state variable)
+# The BOLD period is bold_TR
+bold_monitor = Bold(
+    period=bold_TR,           # BOLD sampling period (TR = 2000 ms)
+    downsample_period=4.0,  # Intermediate downsampling matches dt
+    voi=0,                  # Monitor first state variable (S_e)
+    history=result_init     # Use initial state as warm start for BOLD history
+)
+
+print("BOLD monitor initialized")
 
 ## Utility functions ================================
 # Will be populated after initial simulation completes
