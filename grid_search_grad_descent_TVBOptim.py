@@ -518,16 +518,35 @@ def evaluate_trial(lr, steps, verbose=False):
         "loss": float(jnp.nan_to_num(loss_val, nan=jnp.inf)),
     }
 
-n_cpus = 1 if os.name == "nt" else min(4, os.cpu_count() or 1)
+# Cluster memory management: limit concurrent workers to avoid OOM
+# Each worker allocates large JAX buffers, so we use fewer parallel jobs than available CPUs
+available_cpus = 1 if os.name == "nt" else os.cpu_count() or 1
+n_jobs_parallel = max(1, min(4, available_cpus // 4))  # 1/4 of available CPUs, min 1, max 4
 
-if n_cpus == 1:
-    # Reliable progress on Windows/single-core mode
+print(f"Grid search config: available_cpus={available_cpus}, n_jobs_parallel={n_jobs_parallel}")
+
+if n_jobs_parallel == 1:
+    # Sequential mode on Windows or single-core
+    print("Running grid search sequentially (prevent memory overload)...")
     results = [evaluate_trial(lr, steps) for lr, steps in tqdm(trials, desc="Hyperparam search")]
 else:
-    # Parallel + tqdm integration
+    # Parallel mode with memory safety: fewer workers, larger batches, CPU-only in workers
+    print(f"Running grid search in parallel with {n_jobs_parallel} workers...")
+    
+    # Set environment to prevent GPU allocation in worker processes (avoid memory contention)
+    # On cluster: workers will use CPU/host memory instead
+    import os as _os
+    _os.environ['CUDA_VISIBLE_DEVICES'] = ''  # Disable GPU in worker processes
+    _os.environ['JAX_PLATFORM_NAME'] = 'cpu'  # Force JAX to use CPU backend in workers
+    
     with tqdm_joblib(tqdm(total=len(trials), desc="Hyperparam search")):
-        results = Parallel(n_jobs=n_cpus, backend="loky", batch_size=1)(
-            delayed(evaluate_trial)(lr, steps) for lr, steps in trials
+        results = Parallel(
+            n_jobs=n_jobs_parallel, 
+            backend="loky", 
+            batch_size=4,  # Larger batches reduce overhead
+            verbose=10
+        )(
+            delayed(evaluate_trial)(lr, steps, verbose=True) for lr, steps in trials
         )
 
 results_df = pd.DataFrame(results).sort_values("loss", ascending=True)
