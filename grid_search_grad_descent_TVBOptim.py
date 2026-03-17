@@ -272,7 +272,7 @@ print(f"Network created with {n_nodes} nodes")
 
 ## Initial simulation ================================
 # Prepare simulation: compile model and initialize state
-t1 = 5 * 60_000   # Simulation duration (ms) - 1 minute for initial transient
+t1 = 314_000   # Simulation duration (ms) - 1 minute for initial transient
 dt = 4.0      # Integration timestep (ms) matching original script
 solver = BoundedSolver(Heun(), low=0.0, high=1.0)
 model, state = prepare(network, solver, t1=t1, dt=dt)
@@ -347,13 +347,11 @@ def FIC_update_rule(J_i, raw_data, eta_fic=0.1, target_fic=0.25):
 print("FIC update function defined")
 
 # FIC tuning parameters
-eta_fic = 0.5  # Learning rate for FIC
 target_fic = 0.25  # Target excitatory activity level
-n_fic_steps = 200  # Number of FIC iterations
 
 ## Gradient-based optimization approach ================================
 # Prepare simulation
-t1_opt = 330_000 # Simulation duration (ms) 
+t1_opt = 314_000 # Simulation duration (ms) 
 dt_opt = 4.0
 solver_opt = BoundedSolver(Heun(), low=0.0, high=1.0)
 model_opt, state_opt = prepare(network, solver_opt, t1=t1_opt, dt=dt_opt)
@@ -491,8 +489,8 @@ def tqdm_joblib(tqdm_object):
 
 # Parameter grid
 param_grid = {
-    "l_r": jnp.linspace(1e-2, 1e-1, 5),
-    "steps_grid": jnp.linspace(60, 100, 5, dtype=jnp.int32),
+    "l_r": jnp.linspace(1e-2, 1e-1, 2),
+    "steps_grid": jnp.linspace(60, 80, 2, dtype=jnp.int32),
 }
 
 trials = [
@@ -544,10 +542,9 @@ else:
         results = Parallel(
             n_jobs=n_jobs_parallel, 
             backend="loky", 
-            batch_size=auto,
-            verbose=10
+            batch_size="auto"
         )(
-            delayed(evaluate_trial)(lr, steps, verbose=False) for lr, steps in trials
+            delayed(evaluate_trial)(lr, steps, verbose=True) for lr, steps in trials
         )
 
 results_df = pd.DataFrame(results).sort_values("loss", ascending=True)
