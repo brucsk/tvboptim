@@ -63,7 +63,7 @@ def lagged_fc_matrices(X: np.ndarray | jnp.ndarray, n_tau: int = 2, diag_zero: b
 
     Returns
     -------
-    Q_emp : np.ndarray
+    Q : np.ndarray
         Lagged FC matrices of shape (n_tau, n_nodes, n_nodes).
     """
     # Transform to jax array for compatibility if input is numpy array
@@ -72,18 +72,22 @@ def lagged_fc_matrices(X: np.ndarray | jnp.ndarray, n_tau: int = 2, diag_zero: b
     # Get dimensions
     n_T, n_nodes = X.shape
     # Lag (time-shifted) FC matrices
-    Q_emp = np.zeros([n_tau, n_nodes, n_nodes], dtype=float)
+    #Q_emp = np.zeros([n_tau, n_nodes, n_nodes], dtype=float)
     # Remove mean in the time series
-    centered_X = X - X.mean(axis=0)
-    # Calculate the lagged FC matrices
+    centered_X = X - jnp.mean(X, axis=0)
     n_T_span = n_T - n_tau + 1
-    for i_tau in range(n_tau):
-        Q_emp[i_tau] = np.tensordot(centered_X[0:n_T_span], \
-                                    centered_X[i_tau:n_T_span+i_tau], \
-                                    axes=(0,0))
-    Q_emp /= float(n_T_span - 1)
-    if diag_zero:
-        for i_tau in range(n_tau):
-            np.fill_diagonal(Q_emp[i_tau], 0.0)
+    
+    def one_tau(i_tau):
+        return jnp.tensordot(
+            centered_X[0:n_T_span],
+            centered_X[i_tau:n_T_span + i_tau],
+            axes=(0, 0)
+        )
 
-    return Q_emp
+    Q = jnp.stack([one_tau(i) for i in range(n_tau)], axis=0)
+    Q = Q / (n_T_span - 1)
+
+    if diag_zero:
+        Q = Q * (1.0 - jnp.eye(n_nodes)[None, :, :])
+
+    return Q
