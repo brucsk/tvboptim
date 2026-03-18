@@ -49,7 +49,7 @@ def zscore_check(x, axis=None, thres= 1e-10, verbose=False):
             print(f"Signal is z-scored: mean is close to 0 and std is close to 1 (max|mean|={np.max(np.abs(mean)):.3e}); max|std-1|={np.max(np.abs(std-1)):.3e})")
         return True
 
-def lagged_fc_matrices(X: np.ndarray | jnp.ndarray, n_tau: int = 2, diag_zero: bool = True, check_zscore: bool = False) -> np.ndarray:
+def lagged_fc_matrices(X: np.ndarray | jnp.ndarray, n_tau: int = 2, diag_zero: bool = True) -> np.ndarray:
     """ Compute lagged functional connectivity matrices from time series data.
     
     Parameters
@@ -60,18 +60,12 @@ def lagged_fc_matrices(X: np.ndarray | jnp.ndarray, n_tau: int = 2, diag_zero: b
         Number of time lags to compute (default is 2, which computes FC0 and FC1).
     diag_zero : bool
         Whether to set diagonal elements to zero (default is True).
-    check_zscore : bool
-        Whether to check if the input is z-scored (default is True).
 
     Returns
     -------
     Q_emp : np.ndarray
         Lagged FC matrices of shape (n_tau, n_nodes, n_nodes).
     """
-    if check_zscore:
-        # Check if input is z-scored (important to respect the formula for lagged FC)
-        if zscore_check(X, axis=0) is False:
-            raise ValueError("Input time series data must be z-scored (mean ~ 0 and std ~ 1) along the time axis.")
     # Transform to jax array for compatibility if input is numpy array
     if type(X) is np.ndarray:
         X = jnp.array(X)
