@@ -35,7 +35,7 @@ target_fic = 0.25  # FIC tuning parameter: Target excitatory activity level
 
 # Gradient descent parameters
 learning_rate = 0.0325
-max_steps = 120
+max_steps = 200
 
 # Other parameters
 n_tau = 2 # number of lags for lagged FC
@@ -99,7 +99,7 @@ Q0_pre_gd, Q1_pre_gd = eval_Q0_Q1(
 
 ## Main pipeline ========================
 # Test for scaling up - later substitute with n_sub and n_cond defined at the beggining of script
-n_sub_test = 5
+n_sub_test = 3
 n_cond_test = 2
 
 # Define ranges for participants and conditions for testing
