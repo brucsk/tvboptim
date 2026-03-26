@@ -19,6 +19,7 @@ data_dir = "./"
 cond0_filename = "TS_Control.npy"
 cond1_filename = "TS_Schizo.npy"
 result_dir = "./results/"
+os.makedirs(result_dir, exist_ok=True)
 
 # Set dataset parameters
 n_sub = 48
@@ -142,10 +143,16 @@ for participant_idx in participant_range_test:
         optimized_fits_test[participant_idx, condition_idx] = optimized_fit_temp
 
 ## Save results =====================
+# Create a folder in the results directory with the learning rate and max steps information
+run_dir = os.path.join(result_dir, f"learning_rate_{learning_rate}_max_steps_{max_steps}")
+os.makedirs(run_dir, exist_ok=True)
+
+# Save variables to a pickle file with a timestamp in the filename
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 pikl_name = f"part2_saved_state_{timestamp}.pkl"
-save_path = Path(os.path.join(result_dir, pikl_name))
+pikl_path = Path(os.path.join(run_dir, pikl_name))
 
+# Set variables to save in a dictionary
 to_save = {
     "model_eval": model_eval,
     "state_eval": state_eval,
@@ -154,14 +161,14 @@ to_save = {
     "optimized_fits": optimized_fits_test,
 }
 
-with save_path.open("wb") as f:
+# Save the dictionary to a pickle file
+with pikl_path.open("wb") as f:
     pickle.dump(to_save, f)
 
-print(f"Saved variables to {save_path.resolve()}")
+print(f"Saved variables to {pikl_path.resolve()}")
 
 ## Compute and save quality metrics and plots =====================
-new_result_dir = f"./results/{learning_rate}_{max_steps}/"
 compute_quality_metrics(t1, bold_TR, transient_lim, n_nodes, n_sub_test, n_cond_test, 
                             Q0_emp_all, Q1_emp_all, Q0_pre_gd, Q1_pre_gd, 
                             model_opt, optimized_states_test, optimized_fits_test,  bold_monitor_opt, 
-                            result_dir = new_result_dir, conds = ["CTR", "SCZ"], verbose=False)
+                            result_dir = run_dir, conds = ["CTR", "SCZ"], verbose=False)

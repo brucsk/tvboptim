@@ -431,9 +431,7 @@ def compute_quality_metrics(t1, bold_TR, transient_lim, n_nodes, n_sub, n_cond,
                             model_opt, optimized_states, optimized_fits,  bold_monitor, 
                             result_dir = "./results", conds = ["CTR", "SCZ"], verbose=False):
     """Compute quality metrics (e.g., FC correlations) for pre- and post-optimization."""
-    # Make directory to save results if it doesn't exist
-    os.makedirs(result_dir, exist_ok=True)
-
+    
     # Initialize variable to store z-scored BOLD signals for all participants and conditions after gradient descent optimization
     n_timepoints = int(t1 / bold_TR) - transient_lim  # Number of time points after removing transient
     z_scored_gd = np.zeros((n_sub, n_timepoints, n_nodes, n_cond))
