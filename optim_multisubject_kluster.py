@@ -36,7 +36,7 @@ target_fic = 0.25  # FIC tuning parameter: Target excitatory activity level
 
 # Gradient descent parameters
 learning_rate = 0.0325
-max_steps = 200
+max_steps = 300
 
 # Other parameters
 n_tau = 2 # number of lags for lagged FC
