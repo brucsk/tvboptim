@@ -308,7 +308,24 @@ def setup_eval_model(t1, dt, network):
     state_copy = copy.deepcopy(state_eval)
     return model_eval, state_eval, state_copy
 
+def compute_bold_time_series(model, state, bold_monitor, n_transient=5):
+    """Run simulation and compute BOLD signal, removing initial transient."""
+    # Run simulation
+    raw_result = model(state)
+
+    # Compute BOLD
+    bold_result = bold_monitor(raw_result)
+    bold_signal = bold_result.data
+    # Reshape from (time points, 1, regions) to (time points, regions) 
+    n_timepoints, n_nodes = bold_signal.shape[0], bold_signal.shape[-1]
+    bold_signal = bold_signal.reshape(n_timepoints, n_nodes)
+    # Remove transient (n_transient time points = n_transient * dt ms, given dt=4 ms)
+    bold_signal = bold_signal[n_transient:, :]
+    
+    return bold_signal
+
 def compute_z_scored_bold(model, state, bold_monitor, n_transient=5):
+    """Run simulation, compute BOLD signal, remove initial transient, and z-score per region."""
     # Run simulation
     raw_result = model(state)
 
@@ -434,6 +451,9 @@ def compute_quality_metrics(t1, bold_TR, transient_lim, n_nodes, n_sub, n_cond,
     
     # Initialize variable to store z-scored BOLD signals for all participants and conditions after gradient descent optimization
     n_timepoints = int(t1 / bold_TR) - transient_lim  # Number of time points after removing transient
+    ## TEST : get non z-scored time-series after gradient descent optimization
+    bold_gd = np.zeros((n_sub, n_timepoints, n_nodes, n_cond))
+    ## END of TEST
     z_scored_gd = np.zeros((n_sub, n_timepoints, n_nodes, n_cond))
 
     # Initialize variables to store pre-optimization quality metrics for all participants and conditions
@@ -473,6 +493,14 @@ def compute_quality_metrics(t1, bold_TR, transient_lim, n_nodes, n_sub, n_cond,
             Q0_rmse_pre[participant_idx, condition_idx] = jnp.sqrt(jnp.mean((Q0_pre_gd - Q0_emp)**2))
             Q1_corr_pre[participant_idx, condition_idx] = fc_corr(Q1_pre_gd, Q1_emp)
             Q1_rmse_pre[participant_idx, condition_idx] = jnp.sqrt(jnp.mean((Q1_pre_gd - Q1_emp)**2))
+            
+            ## TEST : get non-z-scored time-series after gradient descent optimization
+            bold_gd[participant_idx, :, :, condition_idx] = compute_bold_time_series(
+                model_opt,
+                optimized_states[participant_idx, condition_idx],
+                bold_monitor
+            )
+            ##
 
             # Compute z-scored BOLD signals after gradient descent optimization 
             z_scored_gd[participant_idx, :, :, condition_idx] = compute_z_scored_bold(
@@ -551,6 +579,13 @@ def compute_quality_metrics(t1, bold_TR, transient_lim, n_nodes, n_sub, n_cond,
     np.save(z_scored_gd_path, z_scored_gd)
     if verbose:
         print(f"Z-scored BOLD signals after gradient descent optimization saved to {z_scored_gd_path}")
+    
+    ## TEST : Save non-z-scored BOLD signals after gradient descent optimization into a .npy file
+    bold_gd_path = os.path.join(result_dir, "bold_gd.npy")
+    np.save(bold_gd_path, bold_gd)
+    if verbose:
+        print(f"Non-z-scored BOLD signals after gradient descent optimization saved to {bold_gd_path}")
+    ## END of TEST
     
     # Save simulated lagged FC matrices into .npy files
     Q0_sim_path = os.path.join(result_dir, "Q0_sim.npy")
